@@ -8,32 +8,33 @@ const PrayerTimes = () => {
   const [loading, setloading] = useState(false);
   const [nextPrayer, setNextPrayer] = useState(null);
   const [location, setLocation] = useState(null);
-const [loadingLocation, setLoadingLocation] = useState(true);
-const [showLocationPopup, setShowLocationPopup] = useState(true);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [showLocationPopup, setShowLocationPopup] = useState(true);
+  const [useGeo, setUseGeo] = useState(false);
 
-const getLocation = () => {
-  if (!navigator.geolocation) return;
+  const getLocation = () => {
+    if (!navigator.geolocation) return;
 
-  setLoadingLocation(true);
+    setLoadingLocation(true);
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      setLocation({
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-      });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+        });
 
-      setShowLocationPopup(false);
-      setLoadingLocation(false);
-    },
-    (err) => {
-      console.log(err);
-      setLoadingLocation(false);
-      setShowLocationPopup(false);
-    }
-  );
-};
-
+        setUseGeo(true);
+        setShowLocationPopup(false);
+        setLoadingLocation(false);
+      },
+      (err) => {
+        console.log(err);
+        setLoadingLocation(false);
+        setShowLocationPopup(false);
+      },
+    );
+  };
 
   let cities = [
     { arName: "القاهرة", name: "Al Qāhirah", code: "EG-C" },
@@ -111,34 +112,38 @@ const getLocation = () => {
       setNextPrayer(next);
     };
 
-    update(); 
+    update();
 
-    const interval = setInterval(update, 1000); 
+    const interval = setInterval(update, 1000);
 
     return () => clearInterval(interval);
   }, [PrayerTimes]);
 
- useEffect(() => {
-  const getPrayerTimes = async () => {
-    if (!location) return;
+  useEffect(() => {
+    const getPrayerTimes = async () => {
+      setloading(true);
 
-    setloading(true);
+      try {
+        let url;
 
-    try {
-      const { data } = await axios.get(
-        `https://api.aladhan.com/v1/timings?latitude=${location.lat}&longitude=${location.lon}&method=5`
-      );
+        if (useGeo && location) {
+          url = `https://api.aladhan.com/v1/timings?latitude=${location.lat}&longitude=${location.lon}&method=5`;
+        } else {
+          url = `https://api.aladhan.com/v1/timingsByCity?country=EG&city=${city}&method=5`;
+        }
 
-      setPrayerTimes(data.data);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setloading(false);
-    }
-  };
+        const { data } = await axios.get(url);
 
-  getPrayerTimes();
-}, [location]);
+        setPrayerTimes(data.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setloading(false);
+      }
+    };
+
+    getPrayerTimes();
+  }, [location, city, useGeo]);
 
   const getRemainingTime = (timeStr) => {
     const [h, m] = timeStr.split(":");
@@ -159,49 +164,46 @@ const getLocation = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-const formatTimeArabicFull = (timeStr) => {
-  if (!timeStr) return "";
+  const formatTimeArabicFull = (timeStr) => {
+    if (!timeStr) return "";
 
-  let [hours, minutes] = timeStr.split(":");
-  hours = Number(hours);
+    let [hours, minutes] = timeStr.split(":");
+    hours = Number(hours);
 
-  if (hours === 0) return `12:${minutes} منتصف الليل`;
-  if (hours < 12) return `${hours}:${minutes} صباحًا`;
+    if (hours === 0) return `12:${minutes} منتصف الليل`;
+    if (hours < 12) return `${hours}:${minutes} صباحًا`;
 
-  if (hours === 12) return `12:${minutes} ظهرًا`;
+    if (hours === 12) return `12:${minutes} ظهرًا`;
 
-  return `${hours - 12}:${minutes} مساءً`;
-};
+    return `${hours - 12}:${minutes} مساءً`;
+  };
 
-  if (loading ) {
+  if (loading) {
     return <Loader />;
   }
   return (
     <div className="w-full min-h-screen bg-gray-800 p-6">
       <div className="container mx-auto">
-
         {showLocationPopup && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-xl text-center w-[300px]">
-      <h2 className="text-xl font-bold mb-3">
-        نحتاج موقعك 
-      </h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl text-center w-[300px]">
+              <h2 className="text-xl font-bold mb-3">نحتاج موقعك</h2>
 
-      <p className="text-gray-600 mb-4">
-        عشان نعرض مواقيت الصلاة بدقة حسب مكانك
-      </p>
+              <p className="text-gray-600 mb-4">
+                عشان نعرض مواقيت الصلاة بدقة حسب مكانك
+              </p>
 
-      <div className="flex gap-3 justify-center">
-        <button
-          className="px-4 py-2 bg-green-500 text-white rounded"
-          onClick={getLocation}
-        >
-          موافق
-        </button>
-      </div>
-    </div>
-  </div>
-)}  
+              <div className="flex gap-3 justify-center">
+                <button
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                  onClick={getLocation}
+                >
+                  موافق
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <h1 className="text-center text-3xl md:text-4xl font-bold mb-3 text-white">
           مواقيت الصلاه
         </h1>
@@ -230,22 +232,29 @@ const formatTimeArabicFull = (timeStr) => {
             </div>
 
             <div>
-                  <p className="text-white text-center">
-              متبقي على صلاة {nextPrayer?.name}
-            </p>
+              <p className="text-white text-center">
+                متبقي على صلاة {nextPrayer?.name}
+              </p>
 
-            <p className="text-white text-center text-2xl">
-              {nextPrayer ? getRemainingTime(nextPrayer.time) : "..."}
-            </p>
+              <p className="text-white text-center text-2xl">
+                {nextPrayer ? getRemainingTime(nextPrayer.time) : "..."}
+              </p>
             </div>
-            
 
             {/* select */}
             <div>
               <select
-                onChange={(e) => setCity(e.target.value)}
+                value={city}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  setUseGeo(false);
+                }}
                 className="w-48 sm:w-56 p-2 rounded-lg border border-white/50 bg-transparent text-white focus:outline-none"
               >
+                <option value="" disabled>
+                  اختر المدينة
+                </option>
+
                 {cities.map((item) => (
                   <option
                     key={item.code}

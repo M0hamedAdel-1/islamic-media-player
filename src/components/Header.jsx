@@ -21,7 +21,7 @@ const Header = () => {
         <Link to="/">
           <img
             className="w-14"
-            src="../../images/logo quran svg.png"
+            src="../../images/logo-quran.png"
             alt="logo"
           />
         </Link>

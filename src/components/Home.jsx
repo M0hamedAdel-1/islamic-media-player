@@ -1,6 +1,6 @@
 const Home = () => {
   return (
-    <div className="h-full bg-[url('/images/landing-bg.jpeg')] bg-center bg-cover">
+    <div className="h-full bg-[url('/images/land.jpg')] bg-center bg-cover">
 
       <div className="h-full w-full bg-black/50 flex items-center justify-center">
 
